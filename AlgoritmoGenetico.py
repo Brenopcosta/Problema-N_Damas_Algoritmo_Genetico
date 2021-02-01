@@ -1,8 +1,11 @@
-# O tabuleiro será representado por uma lista de tamanho = "número de rainhas". Cada elemento da lista poderá ir de zero há "número de rainhas"
+from random import randint
+from random import choices
+
+# O tabuleiro será representado por uma lista de tamanho = "número de rainhas". Cada elemento da lista poderá ir de zero há "número de rainhas - 1"
 def criaTabuleiro(numeroDeRainhas):
         tabuleiro = []
         for i in range(0, numeroDeRainhas):
-            tabuleiro.append(randint(1, numeroDeRainhas))
+            tabuleiro.append(randint(0, numeroDeRainhas - 1))
         print("O tabuleiro criado foi:")
         print(tabuleiro)
         return tabuleiro
@@ -26,9 +29,12 @@ def criaPopulacaoDeTabuleiros(tamanhoPopulacao, numeroDeRainhas):
 
 # Dado um número de rainhas, retorna o formato adequado para representar o número em binário
 def buscaFormatoRepresentacaoBinaria(numeroDeRainhas):
-    if(numeroDeRainhas <=8):
+    if( numeroDeRainhas == 4):
+        return '02b'
+    if( numeroDeRainhas == 8 ):
+        return '03b'
+    else:
         return '04b'
-    return '06b'
 
 # Dado um tabuleiro em lista, retorna o mesmo na forma binária
 def conversorParaRepresentacaoBinaria(tabuleiro, formatoBinario):
@@ -40,18 +46,18 @@ def conversorParaRepresentacaoBinaria(tabuleiro, formatoBinario):
 
 # Dado um tabuleiro em binário, retorna na forma de lista
 def conversorParaRepresetacaoDeLista (tabuleiroEmBinario, formatoBinario):
-    if(formatoBinario == '04b'):
-        tamanhoDoPasso = 4
-    if(formatoBinario == '06b'):
-        tamanhoDoPasso = 6
+    if(formatoBinario == '02b'):
+        tamanhoDoPasso = 2
+    if(formatoBinario == '03b'):
+        tamanhoDoPasso = 3
         
     tabuleiro = []
 
-    posicaoPonteiroDoConversor = 0
+    posicaoPonteiroDoConversor = 2
 
-    for i in range(4,len(tabuleiroEmBinario) + 1, tamanhoDoPasso):
-        tabuleiro.append( int(tabuleiroEmBinario[posicaoPonteiroDoConversor:i] , 2))
-        posicaoPonteiroDoConversor = i 
+    for i in range(0,len(tabuleiroEmBinario) , tamanhoDoPasso):
+        posicaoPonteiroDoConversor = i + tamanhoDoPasso
+        tabuleiro.append( int(tabuleiroEmBinario[i:posicaoPonteiroDoConversor] , 2))
     
     print(tabuleiro)
     return tabuleiro
@@ -111,13 +117,98 @@ def buscarNumeroDeAtaquesNoSudeste(tabuleiro):
 
 #--------------------------------------------------------------------------------- Fim Codigos para avaliação do tabuleiro -------------------------------------------------------------------------
 
-
+# Função para avalias o tabuleiro no formato binário.
 def avaliaTabuleiroEmBinario(tabuleiroEmBinario, formatoBinario):
     return buscarNumeroDeAtaquesNoTabuleiro(conversorParaRepresetacaoDeLista(tabuleiroEmBinario,formatoBinario))
 
+# Função para avaliar uma poupalão de tabuleiros, retorna uma lista com as avaliações do tabuleiro na mesma ordem dos elementos dos tabuleiros.
+def avaliaPopulacao(tabuleiros):
+    avaliacaoDeElementosDaPopulacao = []
+
+    for tabuleiro in tabuleiros:
+        avaliacaoDeElementosDaPopulacao.append( buscarNumeroDeAtaquesNoTabuleiro(tabuleiro) * (-1) )
+    return avaliacaoDeElementosDaPopulacao
+
+# Dada uma populção A de tabuleiros, retorna uma população B baseada na seleção por peso de tabuleiros de A. 
+# Simulando a fase de seleção do  algoritmo genético
+def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao):
+    listaDeAvaliacoes = avaliaPopulacao(tabuleiros)
+
+    minimoDaLista = min(listaDeAvaliacoes)
+
+    listaDePesos = []
+
+    for avaliacao in listaDeAvaliacoes:
+        pesoNormalizado = ((avaliacao - minimoDaLista) / (0 - minimoDaLista)) 
+        listaDePesos.append(pesoNormalizado)
+
+    print("Lista de Pesos:")
+    print(listaDePesos)
+    return choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao )
+
+# Função para realizar crossover de dois tabuleiros
+def realizaCrossover( tabuleiroA, tabuleiroB ):
+    pontoDeCrossover = randint(1, len(tabuleiroA) - 1)
+    print("O ponto de crossover foi:" )
+    print(pontoDeCrossover)
+    
+    return [tabuleiroA[0:pontoDeCrossover] + tabuleiroB[pontoDeCrossover:] , tabuleiroB[0:pontoDeCrossover] + tabuleiroA[pontoDeCrossover:]]
+
+# Função para realizar mutacao de um tabuleiro
+def realizaMutacao( tabuleiro ):
+    pontoDeMutacao = randint(0, len(tabuleiro)-1)
+    tabuleiro[pontoDeMutacao] = randint(0, len(tabuleiro)-1)
+    return tabuleiro
+
+def vaiRealizarCrossover(probabilidadeDeCrossover):
+    saida = choices([True,False],[probabilidadeDeCrossover, 1 - probabilidadeDeCrossover ], k = 1)
+    return saida[0]
+
+def vaiRealizarMutacao(probabilidadeDeMutacao):
+    saida = choices([True,False],[probabilidadeDeMutacao, 1 - probabilidadeDeMutacao ], k = 1)
+    return saida[0]
 
 
-print(avaliaTabuleiroEmBinario('0001001001000001','04b'))
-conversorParaRepresetacaoDeLista(conversorParaRepresentacaoBinaria([1,2,3,4,5,6],'04b'),'04b')
+#print(avaliaTabuleiroEmBinario('0001001001000001','02b'))
+#conversorParaRepresetacaoDeLista(conversorParaRepresentacaoBinaria([1,2,3,0],'02b'),'02b')
+#[[2, 1, 2, 2], [0, 0, 3, 1], [0, 3, 0, 2], [0, 3, 2, 3]]
+#print(criaPopulacaoDeTabuleiros(4,4))
+#print(avaliaPopulacao([[2, 1, 2, 2], [0, 0, 3, 1], [0, 3, 0, 2], [0, 3, 2, 3]]))
+#print(selecionaElementosNaPopulacaoPorPeso([[2, 1, 2, 2], [2, 0, 3, 1], [0, 3, 0, 2], [0, 3, 2, 3]]))
+
+#print(realizaCrossover([2, 1, 2, 2], [2, 0, 3, 1]))
+#print(realizaMutacao([1,2,3,4,5,6,7,8,9]))
+#print(vaiRealizarCrossover(0.5))
+
+
+def algoritmoGenetico(tamanhoDaPopulacao, numeroDeRainhas, numeroDeGeracoes, probabilidadeDeCrossover, probabilidadeDeMutacao, elitismo):
+    
+    populacao = criaPopulacaoDeTabuleiros(tamanhoDaPopulacao,numeroDeRainhas)
+
+    for geracao in range(0,numeroDeGeracoes):
+        populacaoIntermediaria = selecionaElementosNaPopulacaoPorPeso(populacao, tamanhoDaPopulacao)
+
+        if(vaiRealizarCrossover( probabilidadeDeCrossover )):
+            populacaoEmCrossover = []
+
+            for i in range (0, len(populacaoIntermediaria), 2):
+                if( i + 1 >= len(populacaoIntermediaria)):
+                    break
+                
+                for populacao in realizaCrossover(populacaoIntermediaria[i], populacaoIntermediaria[i+1]):
+                    populacaoEmCrossover.append(populacao)
+
+            populacaoIntermediaria = populacaoEmCrossover
+
+        if(vaiRealizarMutacao( probabilidadeDeMutacao )):
+            for i in range(0 , len(populacaoIntermediaria)):
+                populacaoIntermediaria[i] = realizaMutacao(populacaoIntermediaria[i])
+    
+        populacao = populacaoIntermediaria
+    
+    print(populacao)
+    return populacao
+
+algoritmoGenetico( 8, 8, 100, 0.8,0.1, False)
 
 

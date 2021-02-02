@@ -6,8 +6,7 @@ def criaTabuleiro(numeroDeRainhas):
         tabuleiro = []
         for i in range(0, numeroDeRainhas):
             tabuleiro.append(randint(0, numeroDeRainhas - 1))
-        print("O tabuleiro criado foi:")
-        print(tabuleiro)
+     
         return tabuleiro
 
 #Codigo para criar um conjunto de tabuleiros
@@ -59,14 +58,12 @@ def conversorParaRepresetacaoDeLista (tabuleiroEmBinario, formatoBinario):
         posicaoPonteiroDoConversor = i + tamanhoDoPasso
         tabuleiro.append( int(tabuleiroEmBinario[i:posicaoPonteiroDoConversor] , 2))
     
-    print(tabuleiro)
     return tabuleiro
 
 #-------------------------------------------------------------------------------------- Codigos para avaliação do tabuleiro -------------------------------------------------------------------------
 # Como a heurística é baseada em números de ataques. Esta função retorna quantos ataques são possíveis no tabuleiro
 def buscarNumeroDeAtaquesNoTabuleiro(tabuleiro):
     numeroDeAtaques = buscarNumeroDeAtaquesNaHorizontal(tabuleiro) + buscarNumeroDeAtaquesNoNordeste(tabuleiro) + buscarNumeroDeAtaquesNoSudeste(tabuleiro) 
-    print(numeroDeAtaques)
     return numeroDeAtaques
 
 # Para cada rainha no tabuleiro, busca quantos ataques são possíveis na horizontal
@@ -121,36 +118,57 @@ def buscarNumeroDeAtaquesNoSudeste(tabuleiro):
 def avaliaTabuleiroEmBinario(tabuleiroEmBinario, formatoBinario):
     return buscarNumeroDeAtaquesNoTabuleiro(conversorParaRepresetacaoDeLista(tabuleiroEmBinario,formatoBinario))
 
-# Função para avaliar uma poupalão de tabuleiros, retorna uma lista com as avaliações do tabuleiro na mesma ordem dos elementos dos tabuleiros.
+# Função para avaliar uma poupalão de tabuleiros, retorna uma lista com as avaliações do tabuleiro na mesma ordem dos elementos dos tabuleiros e o melhor tabuleiro.
 def avaliaPopulacao(tabuleiros):
     avaliacaoDeElementosDaPopulacao = []
+    melhorAvaliacao = -1000
+    melhorTabuleiro = []
 
     for tabuleiro in tabuleiros:
-        avaliacaoDeElementosDaPopulacao.append( buscarNumeroDeAtaquesNoTabuleiro(tabuleiro) * (-1) )
-    return avaliacaoDeElementosDaPopulacao
+        avaliacao =  buscarNumeroDeAtaquesNoTabuleiro(tabuleiro) * (-1) 
+        if(avaliacao > melhorAvaliacao):
+            melhorAvaliacao = avaliacao
+            melhorTabuleiro = tabuleiro
+        avaliacaoDeElementosDaPopulacao.append( avaliacao )
+    
+    return [avaliacaoDeElementosDaPopulacao, melhorTabuleiro, melhorAvaliacao]
 
-# Dada uma populção A de tabuleiros, retorna uma população B baseada na seleção por peso de tabuleiros de A. 
+# Dada uma populção A de tabuleiros, retorna uma população B baseada na seleção por peso de tabuleiros de A e o melhor tabuleiro. 
 # Simulando a fase de seleção do  algoritmo genético
-def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao):
-    listaDeAvaliacoes = avaliaPopulacao(tabuleiros)
+def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao , elitismo):
+    resultadoAvaliacoes = avaliaPopulacao(tabuleiros)
+
+    listaDeAvaliacoes = resultadoAvaliacoes[0]
+    melhorTabuleiro = resultadoAvaliacoes[1]
+    melhorAvaliacao = resultadoAvaliacoes[2]
 
     minimoDaLista = min(listaDeAvaliacoes)
 
     listaDePesos = []
+    if(minimoDaLista == 0):
+        return [tabuleiros, melhorTabuleiro, melhorAvaliacao , True]
 
-    for avaliacao in listaDeAvaliacoes:
-        pesoNormalizado = ((avaliacao - minimoDaLista) / (0 - minimoDaLista)) 
-        listaDePesos.append(pesoNormalizado)
+    if (elitismo == False):
+        for avaliacao in listaDeAvaliacoes:
+            pesoNormalizado = ((avaliacao - minimoDaLista) / (0 - minimoDaLista)) 
+            listaDePesos.append(pesoNormalizado)
 
-    print("Lista de Pesos:")
-    print(listaDePesos)
-    return choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao )
+        print("Lista de Pesos:")
+        print(listaDePesos)
+        return [choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao ), melhorTabuleiro, melhorAvaliacao, False]
+    else:
+        for avaliacao in listaDeAvaliacoes:
+            pesoNormalizado = ((avaliacao - minimoDaLista) / (0 - minimoDaLista)) 
+            listaDePesos.append(pesoNormalizado)
+
+        print("Lista de Pesos:")
+        print(listaDePesos)
+        return [choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao - 1 ), melhorTabuleiro, melhorAvaliacao, False]
+
 
 # Função para realizar crossover de dois tabuleiros
 def realizaCrossover( tabuleiroA, tabuleiroB ):
     pontoDeCrossover = randint(1, len(tabuleiroA) - 1)
-    print("O ponto de crossover foi:" )
-    print(pontoDeCrossover)
     
     return [tabuleiroA[0:pontoDeCrossover] + tabuleiroB[pontoDeCrossover:] , tabuleiroB[0:pontoDeCrossover] + tabuleiroA[pontoDeCrossover:]]
 
@@ -186,7 +204,15 @@ def algoritmoGenetico(tamanhoDaPopulacao, numeroDeRainhas, numeroDeGeracoes, pro
     populacao = criaPopulacaoDeTabuleiros(tamanhoDaPopulacao,numeroDeRainhas)
 
     for geracao in range(0,numeroDeGeracoes):
-        populacaoIntermediaria = selecionaElementosNaPopulacaoPorPeso(populacao, tamanhoDaPopulacao)
+        elementosSelecionados = selecionaElementosNaPopulacaoPorPeso(populacao, tamanhoDaPopulacao, elitismo)
+        
+        print("Geracao :" + str(geracao) + " Melhor função da geração:" + str(elementosSelecionados[2]))
+
+        if (elementosSelecionados[3] == True):
+            print("Solução encontrada")
+            break
+
+        populacaoIntermediaria = elementosSelecionados[0]
 
         if(vaiRealizarCrossover( probabilidadeDeCrossover )):
             populacaoEmCrossover = []
@@ -204,11 +230,13 @@ def algoritmoGenetico(tamanhoDaPopulacao, numeroDeRainhas, numeroDeGeracoes, pro
             for i in range(0 , len(populacaoIntermediaria)):
                 populacaoIntermediaria[i] = realizaMutacao(populacaoIntermediaria[i])
     
+        if(elitismo):
+            populacaoIntermediaria.append(elementosSelecionados[1])    
+
         populacao = populacaoIntermediaria
     
     print(populacao)
     return populacao
 
-algoritmoGenetico( 8, 8, 100, 0.8,0.1, False)
-
+algoritmoGenetico( 8, 8, 3000, 0.8,0.2, True)
 

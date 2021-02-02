@@ -25,15 +25,12 @@ def criaPopulacaoDeTabuleirosBinarios(tamanhoPopulacao,numeroDeRainhas, formatoB
 
     return populacaoDeTabuleirosBinarios
 
-#A representacao na forma binária será passando cada número do tabuleiro para binário
-#exemplo, em um tabuleiro 4 X 4 temos:
+#A representação na forma binária será passando cada número do tabuleiro para binário, como exemplo, em um tabuleiro 4 X 4 temos:
 # [1,3,1,4] => '0001001100010100
-#   Para tabalhar com binários, será necessário deixar esplícito o formato deste binário, por exemplo, 
-# 1 pode ser representado pelo binário 1, porém, 4 será representado pelo binário 100.
-# Para que a mutação mantenha o tamanho do tabuleiro, será necessário padronizar a representação binária de acordo com o número de rainhas no babuleiro.
-# Por exemplo, um tabuleiro com tamanho entre 1 a 15 rainhas pode ser representado em um tamanho de 4 caracteres. Ou seja, o número 1 será em binário 0001
+#   Para trabalhar com binários, será necessário deixar explícito o formato deste binário, por exemplo, 1 pode ser representado pelo binário 1, porém, 4 será representado pelo binário 100.
+# Para que a mutação mantenha o tamanho do tabuleiro, será necessário padronizar a representação binária de acordo com o número de rainhas no tabuleiro.
+# Por exemplo, um tabuleiro com tamanho entre 0 a 15 rainhas pode ser representado em um tamanho de 4 caracteres. Ou seja, o número 1 será em binário 0001
 # e o número 8 será em binário 1000.
-
 
 # Dado um número de rainhas, retorna o formato adequado para representar o número em binário
 def buscaFormatoRepresentacaoBinaria(numeroDeRainhas):
@@ -126,7 +123,7 @@ def buscarNumeroDeAtaquesNoSudeste(tabuleiro):
 def avaliaTabuleiroEmBinario(tabuleiroEmBinario, formatoBinario):
     return buscarNumeroDeAtaquesNoTabuleiro(conversorParaRepresetacaoDeLista(tabuleiroEmBinario,formatoBinario))
 
-# Função para avaliar uma poupalão de tabuleiros, retorna uma lista com as avaliações do tabuleiro na mesma ordem dos elementos dos tabuleiros e o melhor tabuleiro.
+# Função para avaliar uma população de tabuleiros, retorna uma lista com as avaliações do tabuleiro na mesma ordem dos elementos dos tabuleiros e o melhor tabuleiro.
 def avaliaPopulacao(tabuleiros):
     avaliacaoDeElementosDaPopulacao = []
     melhorAvaliacao = -1000

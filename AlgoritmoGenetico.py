@@ -16,6 +16,15 @@ def criaPopulacaoDeTabuleiros(tamanhoPopulacao, numeroDeRainhas):
         populacaoDeTabuleiros.append(criaTabuleiro(numeroDeRainhas))
     return populacaoDeTabuleiros
 
+def criaPopulacaoDeTabuleirosBinarios(tamanhoPopulacao,numeroDeRainhas, formatoBinario):
+    populacaoDeTabuleirosBinarios = []
+    populacaoDeTabuleiros = criaPopulacaoDeTabuleiros(tamanhoPopulacao,numeroDeRainhas)
+
+    for tabuleiro in populacaoDeTabuleiros:
+        populacaoDeTabuleirosBinarios.append(conversorParaRepresentacaoBinaria(tabuleiro,formatoBinario))
+
+    return populacaoDeTabuleirosBinarios
+
 #A representacao na forma binária será passando cada número do tabuleiro para binário
 #exemplo, em um tabuleiro 4 X 4 temos:
 # [1,3,1,4] => '0001001100010100
@@ -32,8 +41,10 @@ def buscaFormatoRepresentacaoBinaria(numeroDeRainhas):
         return '02b'
     if( numeroDeRainhas == 8 ):
         return '03b'
-    else:
+    if( numeroDeRainhas == 16):
         return '04b'
+    else:
+        return '05b'
 
 # Dado um tabuleiro em lista, retorna o mesmo na forma binária
 def conversorParaRepresentacaoBinaria(tabuleiro, formatoBinario):
@@ -45,10 +56,7 @@ def conversorParaRepresentacaoBinaria(tabuleiro, formatoBinario):
 
 # Dado um tabuleiro em binário, retorna na forma de lista
 def conversorParaRepresetacaoDeLista (tabuleiroEmBinario, formatoBinario):
-    if(formatoBinario == '02b'):
-        tamanhoDoPasso = 2
-    if(formatoBinario == '03b'):
-        tamanhoDoPasso = 3
+    tamanhoDoPasso = int(formatoBinario[1])
         
     tabuleiro = []
 
@@ -133,20 +141,40 @@ def avaliaPopulacao(tabuleiros):
     
     return [avaliacaoDeElementosDaPopulacao, melhorTabuleiro, melhorAvaliacao]
 
+def avaliaPopulacaoDeTabuleirosBinarios(tabuleiros, formatoBinario):
+    avaliacaoDeElementosDaPopulacao = []
+    melhorAvaliacao = -1000
+    melhorTabuleiro = []
+
+    for tabuleiro in tabuleiros:
+        avaliacao =  avaliaTabuleiroEmBinario(tabuleiro,formatoBinario) * (-1) 
+        if(avaliacao > melhorAvaliacao):
+            melhorAvaliacao = avaliacao
+            melhorTabuleiro = tabuleiro
+        avaliacaoDeElementosDaPopulacao.append( avaliacao )
+    
+    return [avaliacaoDeElementosDaPopulacao, melhorTabuleiro, melhorAvaliacao]
+
+
 # Dada uma populção A de tabuleiros, retorna uma população B baseada na seleção por peso de tabuleiros de A e o melhor tabuleiro. 
 # Simulando a fase de seleção do  algoritmo genético
-def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao , elitismo):
-    resultadoAvaliacoes = avaliaPopulacao(tabuleiros)
-
+def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao , elitismo, formatoBinario):
+    if(formatoBinario == ''):
+        resultadoAvaliacoes = avaliaPopulacao(tabuleiros)
+    
+    if(formatoBinario != ''):
+        resultadoAvaliacoes = avaliaPopulacaoDeTabuleirosBinarios(tabuleiros, formatoBinario)
+    
     listaDeAvaliacoes = resultadoAvaliacoes[0]
     melhorTabuleiro = resultadoAvaliacoes[1]
     melhorAvaliacao = resultadoAvaliacoes[2]
+    mediaDasAvaliacoes = sum(listaDeAvaliacoes)/len(listaDeAvaliacoes)
 
     minimoDaLista = min(listaDeAvaliacoes)
 
     listaDePesos = []
     if(minimoDaLista == 0):
-        return [tabuleiros, melhorTabuleiro, melhorAvaliacao , True]
+        return [tabuleiros, melhorTabuleiro, melhorAvaliacao , True, mediaDasAvaliacoes]
 
     if (elitismo == False):
         for avaliacao in listaDeAvaliacoes:
@@ -155,7 +183,7 @@ def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao , elitism
 
         print("Lista de Pesos:")
         print(listaDePesos)
-        return [choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao ), melhorTabuleiro, melhorAvaliacao, False]
+        return [choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao ), melhorTabuleiro, melhorAvaliacao, False, mediaDasAvaliacoes]
     else:
         for avaliacao in listaDeAvaliacoes:
             pesoNormalizado = ((avaliacao - minimoDaLista) / (0 - minimoDaLista)) 
@@ -163,7 +191,7 @@ def selecionaElementosNaPopulacaoPorPeso(tabuleiros,tamanhoDaPopulacao , elitism
 
         print("Lista de Pesos:")
         print(listaDePesos)
-        return [choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao - 1 ), melhorTabuleiro, melhorAvaliacao, False]
+        return [choices(tabuleiros, weights = listaDePesos, k = tamanhoDaPopulacao - 1 ), melhorTabuleiro, melhorAvaliacao, False, mediaDasAvaliacoes]
 
 
 # Função para realizar crossover de dois tabuleiros
@@ -177,6 +205,22 @@ def realizaMutacao( tabuleiro ):
     pontoDeMutacao = randint(0, len(tabuleiro)-1)
     tabuleiro[pontoDeMutacao] = randint(0, len(tabuleiro)-1)
     return tabuleiro
+
+# Função para realizar mutacao de um tabuleiro em binário
+def realizaMutacaoDeTabuleiroBinario( tabuleiroEmBinario ):
+    listaDeCharDoTabuleiro = list(tabuleiroEmBinario)
+
+    pontoDeMutacao = randint(0, len(tabuleiroEmBinario)-1)
+    if(listaDeCharDoTabuleiro[pontoDeMutacao] == '0' ):
+        listaDeCharDoTabuleiro[pontoDeMutacao] = '1'
+    else:
+        listaDeCharDoTabuleiro[pontoDeMutacao] = '0'
+    
+    tabuleiroReconstruido = ''
+    for char in listaDeCharDoTabuleiro:
+        tabuleiroReconstruido = tabuleiroReconstruido + char
+    return tabuleiroReconstruido
+
 
 def vaiRealizarCrossover(probabilidadeDeCrossover):
     saida = choices([True,False],[probabilidadeDeCrossover, 1 - probabilidadeDeCrossover ], k = 1)
@@ -203,10 +247,16 @@ def algoritmoGenetico(tamanhoDaPopulacao, numeroDeRainhas, numeroDeGeracoes, pro
     
     populacao = criaPopulacaoDeTabuleiros(tamanhoDaPopulacao,numeroDeRainhas)
 
+    melhorTabuleiroAtual = []
+    melhorAvaliacaoAtual = 1000
+
     for geracao in range(0,numeroDeGeracoes):
-        elementosSelecionados = selecionaElementosNaPopulacaoPorPeso(populacao, tamanhoDaPopulacao, elitismo)
+        elementosSelecionados = selecionaElementosNaPopulacaoPorPeso(populacao, tamanhoDaPopulacao, elitismo,'')
         
-        print("Geracao :" + str(geracao) + " Melhor função da geração:" + str(elementosSelecionados[2]))
+        melhorAvaliacaoAtual = elementosSelecionados[2]
+        melhorTabuleiroAtual = elementosSelecionados[1]
+
+        print("Geracao : " + str(geracao) + " Melhor avaliação da geração:" + str(elementosSelecionados[2]) + " Média das avaliações: " + str(elementosSelecionados[4]) )
 
         if (elementosSelecionados[3] == True):
             print("Solução encontrada")
@@ -236,7 +286,60 @@ def algoritmoGenetico(tamanhoDaPopulacao, numeroDeRainhas, numeroDeGeracoes, pro
         populacao = populacaoIntermediaria
     
     print(populacao)
+    print("O melhor tabuleiro da geração foi:" )
+    print(melhorTabuleiroAtual)
+    print("Com avaliação: " + str(melhorAvaliacaoAtual))
     return populacao
 
-algoritmoGenetico( 8, 8, 3000, 0.8,0.2, True)
+#algoritmoGenetico( 8, 8, 3000, 0.8,0.2, True)
+
+def algoritimoGeneticoBinario(tamanhoDaPopulacao, numeroDeRainhas, numeroDeGeracoes, probabilidadeDeCrossover, probabilidadeDeMutacao, elitismo):
+    formatoBinario = buscaFormatoRepresentacaoBinaria(numeroDeRainhas)
+
+    populacao = criaPopulacaoDeTabuleirosBinarios(tamanhoDaPopulacao,numeroDeRainhas,formatoBinario)
+
+    melhorTabuleiroAtual = []
+    melhorAvaliacaoAtual = 1000
+
+    for geracao in range(0,numeroDeGeracoes):
+        elementosSelecionados = selecionaElementosNaPopulacaoPorPeso(populacao, tamanhoDaPopulacao, elitismo,formatoBinario)
+        melhorAvaliacaoAtual = elementosSelecionados[2]
+        melhorTabuleiroAtual = elementosSelecionados[1]
+
+        print("Geracao : " + str(geracao) + " Melhor avaliação da geração:" + str(elementosSelecionados[2]) + " Média das avaliações: " + str(elementosSelecionados[4]) )
+
+        if (elementosSelecionados[3] == True):
+            print("Solução encontrada")
+            break
+
+        populacaoIntermediaria = elementosSelecionados[0]
+
+        if(vaiRealizarCrossover( probabilidadeDeCrossover )):
+            populacaoEmCrossover = []
+
+            for i in range (0, len(populacaoIntermediaria), 2):
+                if( i + 1 >= len(populacaoIntermediaria)):
+                    break
+                
+                for populacao in realizaCrossover(populacaoIntermediaria[i], populacaoIntermediaria[i+1]):
+                    populacaoEmCrossover.append(populacao)
+
+            populacaoIntermediaria = populacaoEmCrossover
+
+        if(vaiRealizarMutacao( probabilidadeDeMutacao )):
+            for i in range(0 , len(populacaoIntermediaria)):
+                populacaoIntermediaria[i] = realizaMutacaoDeTabuleiroBinario(populacaoIntermediaria[i])
+    
+        if(elitismo):
+            populacaoIntermediaria.append(elementosSelecionados[1])    
+
+        populacao = populacaoIntermediaria
+    
+    print(populacao)
+    print("O melhor tabuleiro da geração foi:" )
+    print(conversorParaRepresetacaoDeLista(melhorTabuleiroAtual,formatoBinario))
+    print("Com avaliação: " + str(melhorAvaliacaoAtual))
+    return populacao
+
+algoritimoGeneticoBinario(8, 8, 3000, 0.8,0.2, True)
 
